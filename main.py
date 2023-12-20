@@ -2,7 +2,12 @@ import bpy
 import queue
 
 rules: dict = {}
-axioms: list
+axioms: list = []
+operators: dict = {
+    "+": lambda x: print("do a thing")
+}
+
+processing_queue: queue.Queue = queue.Queue()
 
 # --------------------------------- Properties ---------------------------------
 
@@ -104,10 +109,14 @@ class OP_Render_system(bpy.types.Operator):
         for index, value in enumerate(rules_list):
             name, exp = value.expression.split("=")
             rules[name] = exp
-        print("Rules : ", rules)
 
     def iterate_axiom(self, axiom, iterations):
-        pass
+        for i in range(iterations):
+            for key in rules.keys():
+                axiom = axiom.replace(key, rules[key])
+        print("Processed axiom : ", axiom)
+        axioms.append(axiom)
+
 
     def iterate(self, axioms):
         for index, value in enumerate(axioms):
