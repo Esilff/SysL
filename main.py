@@ -6,10 +6,6 @@ from mathutils import Vector, Matrix
 
 rules: dict = {}
 axioms: list = []
-operators: dict = {
-    "+": lambda x: print("do a thing")
-}
-
 
 # --------------------------------- Properties ---------------------------------
 
