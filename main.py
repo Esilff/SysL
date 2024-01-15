@@ -9,6 +9,7 @@ operators: dict = {
 
 processing_queue: queue.Queue = queue.Queue()
 
+
 # --------------------------------- Properties ---------------------------------
 
 class RuleProperty(bpy.types.PropertyGroup):
@@ -26,7 +27,12 @@ class RuleProperty(bpy.types.PropertyGroup):
 class RuleCollectionProperty(bpy.types.PropertyGroup):
     collection: bpy.props.CollectionProperty(type=RuleProperty)
 
+
 class AxiomProperty(bpy.types.PropertyGroup):
+    name: bpy.props.StringProperty(
+        name="Name",
+        description="The name used in the scene"
+    )
     expression: bpy.props.StringProperty(
         name="",
         description="The expression of the axiom"
@@ -40,9 +46,18 @@ class AxiomProperty(bpy.types.PropertyGroup):
         name="Iterations",
         default=1
     )
+    alpha: bpy.props.FloatProperty(
+        name="Alpha",
+        default=45
+    )
+    position: bpy.props.FloatVectorProperty(
+        name="Position"
+    )
+
 
 class AxiomCollectionProperty(bpy.types.PropertyGroup):
     collection: bpy.props.CollectionProperty(type=AxiomProperty)
+
 
 # --------------------------------- Operators ---------------------------------
 
@@ -74,6 +89,7 @@ class OP_clear_rules(bpy.types.Operator):
         context.scene.rules_collection.collection.clear()
         return {"FINISHED"}
 
+
 class OP_add_axiom(bpy.types.Operator):
     bl_label = ""
     bl_idname = "op.add_axiom"
@@ -81,6 +97,7 @@ class OP_add_axiom(bpy.types.Operator):
     def execute(self, context):
         axiom_collection = context.scene.axiom_collection.collection.add()
         return {"FINISHED"}
+
 
 class OP_remove_axiom(bpy.types.Operator):
     bl_label = ""
@@ -90,6 +107,7 @@ class OP_remove_axiom(bpy.types.Operator):
         axiom_collection = context.scene.axiom_collection.collection
         axiom_collection.remove(len(axiom_collection) - 1)
         return {"FINISHED"}
+
 
 class OP_clear_axiom(bpy.types.Operator):
     bl_label = ""
@@ -106,17 +124,20 @@ class OP_Render_system(bpy.types.Operator):
     bl_idname = "op.render_sys"
 
     def parse_rules(self, rules_list):
+        rules.clear()
         for index, value in enumerate(rules_list):
+            if not value.enabled:
+                continue
             name, exp = value.expression.split("=")
             rules[name] = exp
 
     def iterate_axiom(self, axiom, iterations):
+        axioms.clear()
         for i in range(iterations):
             for key in rules.keys():
                 axiom = axiom.replace(key, rules[key])
         print("Processed axiom : ", axiom)
         axioms.append(axiom)
-
 
     def iterate(self, axioms):
         for index, value in enumerate(axioms):
@@ -124,7 +145,18 @@ class OP_Render_system(bpy.types.Operator):
                 continue
             self.iterate_axiom(value.expression, value.iterations)
 
+    # def render_points(self):
 
+    def render_axiom(self, name, expression, iterations, alpha, position, index):
+        self.create_point(name or f"axiom_{index}", position)
+
+
+    def create_point(self, name, position):
+        mesh = bpy.data.meshes.new('SingleVertex')
+        obj = bpy.data.objects.new(name, mesh)
+        bpy.context.collection.objects.link(obj)
+        obj.location = position
+        mesh.from_pydata([position], [], [])
 
     def execute(self, context):
         rules_collection = context.scene.rules_collection.collection
@@ -132,8 +164,20 @@ class OP_Render_system(bpy.types.Operator):
 
         self.parse_rules(rules_collection)
         self.iterate(axiom_collection)
-        return {"FINISHED"}
 
+        # --- Rendering stage ---
+        for index, value in enumerate(axioms):
+            axiom_prop = axiom_collection[index]
+            self.render_axiom(
+                axiom_prop.name,
+                value,
+                axiom_prop.iterations,
+                axiom_prop.alpha,
+                axiom_prop.position,
+                index
+            )
+
+        return {"FINISHED"}
 
 
 # --------------------------------- Pannels ---------------------------------
@@ -177,10 +221,14 @@ class LSysAxiomPanel(bpy.types.Panel):
 
     def render_axioms(self, layout, axioms):
         for index, axiom in enumerate(axioms):
+            layout.prop(axiom, "name")
             row = layout.row()
             row.prop(axiom, "expression")
             row.prop(axiom, "enabled", icon="HIDE_OFF")
             layout.prop(axiom, "iterations")
+            layout.prop(axiom, "alpha")
+            position_row = layout.row()
+            position_row.prop(axiom, "position")
 
     def render_operators(self, layout):
         layout.operator("op.add_axiom", icon="ADD")
