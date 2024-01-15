@@ -1,13 +1,14 @@
+import math
+
+import bmesh
 import bpy
-import queue
+from mathutils import Vector, Matrix
 
 rules: dict = {}
 axioms: list = []
 operators: dict = {
     "+": lambda x: print("do a thing")
 }
-
-processing_queue: queue.Queue = queue.Queue()
 
 
 # --------------------------------- Properties ---------------------------------
@@ -123,6 +124,7 @@ class OP_Render_system(bpy.types.Operator):
     bl_label = ""
     bl_idname = "op.render_sys"
 
+
     def parse_rules(self, rules_list):
         rules.clear()
         for index, value in enumerate(rules_list):
@@ -147,9 +149,21 @@ class OP_Render_system(bpy.types.Operator):
 
     # def render_points(self):
 
-    def render_axiom(self, name, expression, iterations, alpha, position, index):
-        self.create_point(name or f"axiom_{index}", position)
-
+    def render_axiom(self, expression, axiom):
+        name = axiom.name or f"axiom_{axiom.index}"
+        vec = Vector((1.0, 0.0, 0.0))
+        radians = math.radians(axiom.alpha)
+        p_rot_mat = Matrix.Rotation(radians, 4, 'Z')
+        n_rot_mat = Matrix.Rotation(-radians, 4, 'Z')
+        self.create_point(name, axiom.position)
+        for char in expression:
+            if char == 'F':
+                self.extrude_object(name, vec)
+            if char == '+':
+                vec = p_rot_mat @ vec
+            if char == '-':
+                vec = n_rot_mat @ vec
+            print(f"Vector: {vec}")
 
     def create_point(self, name, position):
         mesh = bpy.data.meshes.new('SingleVertex')
@@ -157,6 +171,23 @@ class OP_Render_system(bpy.types.Operator):
         bpy.context.collection.objects.link(obj)
         obj.location = position
         mesh.from_pydata([position], [], [])
+
+    def extrude_object(self, object_name, extrusion_vector):
+        obj = bpy.data.objects.get(object_name)
+
+        if not obj or obj.type != 'MESH' or not obj.data.vertices:
+            print("Invalid object.")
+            return
+
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.mode_set(mode='EDIT')
+        bm = bmesh.from_edit_mesh(obj.data)
+        bm.verts.ensure_lookup_table()
+        bm.verts[-1].select = True
+        bmesh.update_edit_mesh(obj.data)
+        bpy.ops.mesh.extrude_vertices_move(TRANSFORM_OT_translate={"value": extrusion_vector})
+
+        bpy.ops.object.mode_set(mode='OBJECT')
 
     def execute(self, context):
         rules_collection = context.scene.rules_collection.collection
@@ -168,13 +199,11 @@ class OP_Render_system(bpy.types.Operator):
         # --- Rendering stage ---
         for index, value in enumerate(axioms):
             axiom_prop = axiom_collection[index]
+            if not axiom_prop.enabled:
+                continue
             self.render_axiom(
-                axiom_prop.name,
                 value,
-                axiom_prop.iterations,
-                axiom_prop.alpha,
-                axiom_prop.position,
-                index
+                axiom_prop
             )
 
         return {"FINISHED"}
