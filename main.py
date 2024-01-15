@@ -155,14 +155,27 @@ class OP_Render_system(bpy.types.Operator):
         radians = math.radians(axiom.alpha)
         p_rot_mat = Matrix.Rotation(radians, 4, 'Z')
         n_rot_mat = Matrix.Rotation(-radians, 4, 'Z')
+        up_rot_mat = Matrix.Rotation(radians, 4, 'Y')
+        down_rot_mat = Matrix.Rotation(-radians, 4, 'Y')
+        state_stack = []
+        source = None
         self.create_point(name, axiom.position)
         for char in expression:
             if char == 'F':
-                self.extrude_object(name, vec)
+                self.extrude_object(name, vec, source)
             if char == '+':
                 vec = p_rot_mat @ vec
             if char == '-':
                 vec = n_rot_mat @ vec
+            if char == '^':
+                vec = up_rot_mat @ vec
+            if char == '&':
+                vec = down_rot_mat @ vec
+            if char == '[':
+                state_stack.append(self.last_extrude(name))
+            if char == ']':
+                source = state_stack.pop()
+
             print(f"Vector: {vec}")
 
     def create_point(self, name, position):
@@ -172,9 +185,15 @@ class OP_Render_system(bpy.types.Operator):
         obj.location = position
         mesh.from_pydata([position], [], [])
 
-    def extrude_object(self, object_name, extrusion_vector):
+    def last_extrude(self, object_name):
         obj = bpy.data.objects.get(object_name)
+        if not obj or obj.type != 'MESH' or not obj.data.vertices:
+            print("Invalid object.")
+            return None
+        return obj.data.vertices[-1].co.copy()  # Return the position of the last vertex
 
+    def extrude_object(self, object_name, extrusion_vector, source_position=None):
+        obj = bpy.data.objects.get(object_name)
         if not obj or obj.type != 'MESH' or not obj.data.vertices:
             print("Invalid object.")
             return
@@ -183,10 +202,15 @@ class OP_Render_system(bpy.types.Operator):
         bpy.ops.object.mode_set(mode='EDIT')
         bm = bmesh.from_edit_mesh(obj.data)
         bm.verts.ensure_lookup_table()
-        bm.verts[-1].select = True
+
+        if source_position is not None:
+            closest_vert = min(bm.verts, key=lambda v: (v.co - source_position).length)
+            closest_vert.select = True
+        else:
+            bm.verts[-1].select = True
+
         bmesh.update_edit_mesh(obj.data)
         bpy.ops.mesh.extrude_vertices_move(TRANSFORM_OT_translate={"value": extrusion_vector})
-
         bpy.ops.object.mode_set(mode='OBJECT')
 
     def execute(self, context):
