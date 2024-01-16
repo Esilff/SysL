@@ -55,6 +55,9 @@ class AxiomProperty(bpy.types.PropertyGroup):
 class AxiomCollectionProperty(bpy.types.PropertyGroup):
     collection: bpy.props.CollectionProperty(type=AxiomProperty)
 
+class RenderOptionsProperty(bpy.types.PropertyGroup):
+    skinned: bpy.props.BoolProperty(name="Skinned", default=False)
+    relative_radius: bpy.props.BoolProperty(name="Relative radius", default=False)
 
 # --------------------------------- Operators ---------------------------------
 
@@ -145,7 +148,7 @@ class OP_Render_system(bpy.types.Operator):
 
     # def render_points(self):
 
-    def render_axiom(self, expression, axiom):
+    def render_axiom(self, expression, axiom, options):
         name = axiom.name or f"axiom_{axiom.index}"
         vec = Vector((1.0, 0.0, 0.0))
         radians = math.radians(axiom.alpha)
@@ -173,6 +176,8 @@ class OP_Render_system(bpy.types.Operator):
                 source = state_stack.pop()
 
             print(f"Vector: {vec}")
+        if options.skinned:
+            self.add_skin_modifier(name, options)
 
     def create_point(self, name, position):
         mesh = bpy.data.meshes.new('SingleVertex')
@@ -209,9 +214,17 @@ class OP_Render_system(bpy.types.Operator):
         bpy.ops.mesh.extrude_vertices_move(TRANSFORM_OT_translate={"value": extrusion_vector})
         bpy.ops.object.mode_set(mode='OBJECT')
 
+    def add_skin_modifier(self, object_name, options):
+        obj = bpy.data.objects.get(object_name)
+        if obj is None and obj.type != 'MESH':
+            return
+        obj.modifiers.new(name="Skin", type="SKIN")
+        bpy.context.view_layer.update()
+
     def execute(self, context):
         rules_collection = context.scene.rules_collection.collection
         axiom_collection = context.scene.axiom_collection.collection
+        options = context.scene.options
 
         self.parse_rules(rules_collection)
         self.iterate(axiom_collection)
@@ -223,7 +236,8 @@ class OP_Render_system(bpy.types.Operator):
                 continue
             self.render_axiom(
                 value,
-                axiom_prop
+                axiom_prop,
+                options
             )
 
         return {"FINISHED"}
@@ -304,13 +318,17 @@ class LSysRenderPanel(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+        options = context.scene.options
+        layout.prop(options, "skinned")
+        if options.skinned:
+            layout.prop(options, "relative_radius")
         layout.operator("op.render_sys", text="Render")
 
 
 def define_props():
     bpy.types.Scene.rules_collection = bpy.props.PointerProperty(type=RuleCollectionProperty)
     bpy.types.Scene.axiom_collection = bpy.props.PointerProperty(type=AxiomCollectionProperty)
-
+    bpy.types.Scene.options = bpy.props.PointerProperty(type=RenderOptionsProperty)
 
 # --------------------------------- Registration ---------------------------------
 
@@ -321,6 +339,7 @@ def register():
     bpy.utils.register_class(RuleCollectionProperty)
     bpy.utils.register_class(AxiomProperty)
     bpy.utils.register_class(AxiomCollectionProperty)
+    bpy.utils.register_class(RenderOptionsProperty)
 
     # REGISTERING OPERATORS
 
@@ -348,7 +367,7 @@ def unregister():
     bpy.utils.unregister_class(RuleCollectionProperty)
     bpy.utils.unregister_class(AxiomProperty)
     bpy.utils.unregister_class(AxiomCollectionProperty)
-
+    bpy.utils.unregister_class(RenderOptionsProperty)
     # UNREGISTERING PROPERTIES
 
     bpy.utils.unregister_class(OP_add_rule)
