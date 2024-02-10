@@ -1,19 +1,15 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.5)
 project(SysL VERSION 0.0.1 DESCRIPTION "A dynamic library to generate LSystem data representations" LANGUAGES CXX)
 
 set(SYSL_TARGET_NAME ${PROJECT_NAME})
-set(SYSL_INCLUDE_DIRS
-        PUBLIC ${CMAKE_SOURCE_DIR}/include
-        PUBLIC ${CMAKE_BINARY_DIR}/export
 
-)
 set(SYSL_TARGET_SOURCES
         src/SysL.cpp
 
         src/systems/tortoise.cpp
-
 )
 
+add_subdirectory(libs)
 
 add_library(${SYSL_TARGET_NAME} SHARED ${SYSL_TARGET_SOURCES})
 
@@ -25,4 +21,9 @@ generate_export_header(${SYSL_TARGET_NAME}
         EXPORT_FILE_NAME "export/SysL_export.hpp"
 )
 
-target_include_directories(${SYSL_TARGET_NAME} ${SYSL_INCLUDE_DIRS})
+target_include_directories(${SYSL_TARGET_NAME}
+        PUBLIC ${CMAKE_SOURCE_DIR}/include
+        PUBLIC ${CMAKE_BINARY_DIR}/export
+)
+
+target_link_libraries(${SYSL_TARGET_NAME} PUBLIC glm)

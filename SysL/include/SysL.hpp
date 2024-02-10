@@ -4,8 +4,12 @@
 #include <SysL_export.hpp>
 
 extern "C" {
-    void* getEnvironment();
-    const char* processAxiom(const char* axiom, unsigned int iterations, float alpha);
+    SYSL_API void* getTortoiseSystem();
+
+    SYSL_API void addRule(void* system, const char* expression);
+    SYSL_API void removeRule(void* system, const char* name);
+    SYSL_API void clearRules(void* system);
+    SYSL_API const char* generateAxiom(void* system, const char* axiom, unsigned int iterations);
 };
 
 #endif
