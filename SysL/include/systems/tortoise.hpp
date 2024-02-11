@@ -17,7 +17,7 @@ namespace SysL {
 
     public:
 
-        std::string SysL::Tortoise::generateAxiom(const std::string &expression, unsigned int iterations);
+        std::string generateAxiom(const std::string &expression, unsigned int iterations);
 
 
         void addRule(const std::string& expression);
