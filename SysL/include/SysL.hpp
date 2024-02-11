@@ -10,6 +10,7 @@ extern "C" {
     SYSL_API void removeRule(void* system, const char* name);
     SYSL_API void clearRules(void* system);
     SYSL_API const char* generateAxiom(void* system, const char* axiom, unsigned int iterations);
+    SYSL_API void computeSystemData(void* system);
 };
 
 #endif

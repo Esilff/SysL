@@ -24,7 +24,11 @@ void clearRules(void* system) {
 
 const char* generateAxiom(void* system, const char* axiom, unsigned int iterations) {
     auto * castSystem = static_cast<SysL::Tortoise*>(system);
-    static std::string result = castSystem->generateAxiom(axiom, iterations);
+    const char* result = castSystem->generateAxiom(axiom, iterations).c_str();
     std::cout << "Final result : " << castSystem->generateAxiom(axiom, iterations) << std::endl;
-    return result.c_str();
+    return result;
+}
+
+void computeSystemData(void* system) {
+
 }
