@@ -1,4 +1,4 @@
-from SysL import SysL
+import SysL
 
 sysl: SysL = SysL()
 

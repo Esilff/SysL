@@ -15,6 +15,7 @@ it.
 A rule can be ignored depending on the value of the enabled parameter.
 """
 
+
 class RuleProperty(bpy.types.PropertyGroup):
     expression: bpy.props.StringProperty(
         name="",
@@ -26,12 +27,15 @@ class RuleProperty(bpy.types.PropertyGroup):
         default=True
     )
 
+
 """
 A collection of rules for the addon.
 """
 
+
 class RuleCollectionProperty(bpy.types.PropertyGroup):
     collection: bpy.props.CollectionProperty(type=RuleProperty)
+
 
 """
 An axiom is a default expression used for rendering. Rules are applied onto it a number of times depending on the 
@@ -44,6 +48,7 @@ iteration param.
 @var position: The starting position of the LSystem
 @var step: The distance between each segment or the distance of a F operator.
 """
+
 
 class AxiomProperty(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(
@@ -75,12 +80,15 @@ class AxiomProperty(bpy.types.PropertyGroup):
         default=1
     )
 
+
 """
 A collection of axioms for the addon.
 """
 
+
 class AxiomCollectionProperty(bpy.types.PropertyGroup):
     collection: bpy.props.CollectionProperty(type=AxiomProperty)
+
 
 """
 Rendering options for the addon.
@@ -89,15 +97,18 @@ Rendering options for the addon.
 the depth in the tree.
 """
 
+
 class RenderOptionsProperty(bpy.types.PropertyGroup):
     skinned: bpy.props.BoolProperty(name="Skinned", default=False)
     relative_radius: bpy.props.BoolProperty(name="Relative radius", default=False)
+
 
 # --------------------------------- Operators ---------------------------------
 
 """
 An operator to add a rule to the collection.
 """
+
 
 class OP_add_rule(bpy.types.Operator):
     bl_label = ""
@@ -107,9 +118,11 @@ class OP_add_rule(bpy.types.Operator):
         context.scene.rules_collection.collection.add()
         return {"FINISHED"}
 
+
 """
 An operator to remove a rule from the collection.
 """
+
 
 class OP_remove_rule(bpy.types.Operator):
     bl_label = ""
@@ -120,9 +133,11 @@ class OP_remove_rule(bpy.types.Operator):
         rule_collection.remove(len(rule_collection) - 1)
         return {"FINISHED"}
 
+
 """
 An operator to clear all rules.
 """
+
 
 class OP_clear_rules(bpy.types.Operator):
     bl_label = ""
@@ -133,9 +148,11 @@ class OP_clear_rules(bpy.types.Operator):
         context.scene.rules_collection.collection.clear()
         return {"FINISHED"}
 
+
 """
 An operator to add an axiom to the collection.
 """
+
 
 class OP_add_axiom(bpy.types.Operator):
     bl_label = ""
@@ -145,9 +162,11 @@ class OP_add_axiom(bpy.types.Operator):
         axiom_collection = context.scene.axiom_collection.collection.add()
         return {"FINISHED"}
 
+
 """
 An operator to remove an axiom from the collection.
 """
+
 
 class OP_remove_axiom(bpy.types.Operator):
     bl_label = ""
@@ -158,9 +177,11 @@ class OP_remove_axiom(bpy.types.Operator):
         axiom_collection.remove(len(axiom_collection) - 1)
         return {"FINISHED"}
 
+
 """
 An operator to clear all axioms from the collection.
 """
+
 
 class OP_clear_axiom(bpy.types.Operator):
     bl_label = ""
@@ -171,9 +192,11 @@ class OP_clear_axiom(bpy.types.Operator):
 
         return {"FINISHED"}
 
+
 """
 An operator in charge of processing the axioms.
 """
+
 
 class OP_Render_system(bpy.types.Operator):
     bl_label = ""
@@ -260,6 +283,7 @@ class OP_Render_system(bpy.types.Operator):
     @param name: the name of the object
     @param position: the position of the object
     """
+
     def create_point(self, name, position):
         mesh = bpy.data.meshes.new('SingleVertex')
         obj = bpy.data.objects.new(name, mesh)
@@ -271,6 +295,7 @@ class OP_Render_system(bpy.types.Operator):
     Retrieve the last extruded position of the object. Only used for the [ operator in order to save a point.
     @param name: the name of the object
     """
+
     def last_extrude(self, object_name):
         obj = bpy.data.objects.get(object_name)
         if not obj or obj.type != 'MESH' or not obj.data.vertices:
@@ -351,6 +376,7 @@ class OP_Render_system(bpy.types.Operator):
 Renders the rule pannel.
 """
 
+
 class LSysRulesPanel(bpy.types.Panel):
     bl_label = "Rules"
     bl_idname = "PT_LSYS_RULES"
@@ -388,9 +414,11 @@ class LSysRulesPanel(bpy.types.Panel):
         self.render_rules(split_box.column(), rules)
         self.render_operators(split_box.column())
 
+
 """
 Renders the axiom pannel.
 """
+
 
 class LSysAxiomPanel(bpy.types.Panel):
     bl_label = "Axioms"
@@ -432,9 +460,11 @@ class LSysAxiomPanel(bpy.types.Panel):
         self.render_axioms(split_box.column(), axioms)
         self.render_operators(split_box.column())
 
+
 """
 Renders the rendering pannel.
 """
+
 
 class LSysRenderPanel(bpy.types.Panel):
     bl_label = "Render"
@@ -456,10 +486,12 @@ class LSysRenderPanel(bpy.types.Panel):
 Define the scene props.
 """
 
+
 def define_props():
     bpy.types.Scene.rules_collection = bpy.props.PointerProperty(type=RuleCollectionProperty)
     bpy.types.Scene.axiom_collection = bpy.props.PointerProperty(type=AxiomCollectionProperty)
     bpy.types.Scene.options = bpy.props.PointerProperty(type=RenderOptionsProperty)
+
 
 # --------------------------------- Registration ---------------------------------
 

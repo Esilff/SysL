@@ -3,7 +3,7 @@ import ctypes
 class SysL:
 
     def __init__(self):
-        self.sysl = ctypes.CDLL(r"C:\Users\Esilff\Git\SysL\SysL\cmake-build-release-visual-studio\SysL.dll")
+        self.sysl = ctypes.CDLL(r"C:\Users\Esilff\Git\SysL\SysL.dll")
         self.load_functions()
 
     def get_tortoise(self):
